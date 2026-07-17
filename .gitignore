@@ -1,0 +1,12 @@
+.venv/
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+.env
+.env.*
+credentials.json
+# Any captured LIVE responses (real org/customer data) live here, never committed.
+spike/live/
