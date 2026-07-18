@@ -41,6 +41,18 @@ def get(ctx: typer.Context, invoice_id: str = typer.Argument(..., help="Invoice 
     obj.emitter.emit(obj.client().get(f"/invoices/{invoice_id}"))
 
 
+@app.command("payments")
+def payments(ctx: typer.Context, invoice_id: str = typer.Argument(..., help="Invoice id (UUID).")) -> None:
+    """Payment status of an invoice: what's open, what's been paid, and how.
+
+    Reports `openAmount`, `paymentStatus` (balanced | openRevenue) and the payment
+    items. Note this shows the STORED status (`open`), never the derived `overdue`
+    — aging lives only in `receivables` / `invoice list`.
+    """
+    obj = ctx_obj(ctx)
+    obj.emitter.emit(obj.client().get(f"/payments/{invoice_id}"))
+
+
 @app.command("pdf")
 def pdf(
     ctx: typer.Context,

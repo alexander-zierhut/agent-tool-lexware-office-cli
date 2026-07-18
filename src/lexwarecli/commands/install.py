@@ -55,9 +55,15 @@ per-customer rollup (`--view customers`), and who to chase (`--view dunning`).
 ## Commands
 - `lexware-cli guide` — the built-in manual, with its own topic list.
 - `lexware-cli receivables [--view aging|customers|dunning]` — the killer feature.
-- `lexware-cli invoice list|get|create|pdf` — `list` needs a --status (default open);
-  `pdf` needs a FINALIZED invoice; `create` makes a draft unless --finalize.
-- `lexware-cli contact list|get|create` — customers & vendors.
+- `lexware-cli invoice list|get|create|finalize|payments|pdf` — `list` needs a
+  --status (default open); `pdf` needs a FINALIZED invoice; `create` drafts unless --finalize.
+- `lexware-cli contact list|get|create|update` — customers & vendors.
+- Other sales documents, same shape: `lexware-cli quotation|credit-note|order-confirmation|delivery-note|down-payment-invoice|dunning list|get|create` (dunnings need --preceding; down-payment-invoices are read-only).
+- `lexware-cli article list|get|create|delete` — products/services catalogue.
+- `lexware-cli voucher list|get|delete` — bookkeeping vouchers.
+- `lexware-cli webhook subscribe|list|get|delete|events` — event subscriptions.
+- `lexware-cli reference countries|posting-categories|payment-conditions|print-layouts`.
+- `lexware-cli recurring list|get` — recurring templates. `lexware-cli file download <id> --out`.
 - `lexware-cli profile show|doctor` — the connected organisation + a health check.
 - `lexware-cli auth login|status|logout` — `login --sandbox` for the test API.
 - `lexware-cli raw get|post|put|delete <path>` — escape hatch (paths relative to /v1).

@@ -90,3 +90,27 @@ def create(
         except Exception:
             pass
     obj.emitter.emit(result)
+
+
+@app.command("update")
+def update(
+    ctx: typer.Context,
+    contact_id: str = typer.Argument(..., help="Contact id (UUID)."),
+    company: str = typer.Option(None, "--company", help="New company name."),
+) -> None:
+    """Update a contact (read-modify-write; the version is handled for you).
+
+    Note the API's max-ONE-entry-per-list rule: a contact whose email/phone/address
+    lists already hold more than one entry cannot be PUT — the server rejects it.
+    This command re-sends the current object with your change and the current
+    version; a stale version is a conflict (exit 6).
+    """
+    obj = ctx_obj(ctx)
+    client = obj.client()
+    cur = client.get(f"/contacts/{contact_id}")  # read (executes even under --dry-run)
+    if not isinstance(cur, dict):
+        raise ValidationError(f"no contact {contact_id!r}.")
+    if company is not None:
+        cur.setdefault("company", {})["name"] = company
+    # PUT the whole object back with its current version (optimistic locking).
+    obj.emitter.emit(client.put(f"/contacts/{contact_id}", json=cur))

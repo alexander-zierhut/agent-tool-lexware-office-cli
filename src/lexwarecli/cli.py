@@ -99,25 +99,47 @@ def _pop_globals(argv: list[str]) -> tuple[str | None, str | None, set[str], lis
 
 
 from .commands import (  # noqa: E402
+    article,
     auth,
     contact,
     context as context_cmd,
+    file as file_cmd,
     guide,
     install,
     invoice,
     profile as profile_cmd,
     raw,
     receivables,
+    recurring,
+    reference,
     settings,
+    voucher,
+    webhook,
 )
+from .commands._salesdoc import make_group  # noqa: E402
 
 app.command("guide", help="Built-in operating guide — how to use this CLI without external docs.")(guide.guide)
 
 # Top-level, because it's the thing you came for: "who owes me money?"
 app.command("receivables", help="Outstanding receivables + AR aging — the number the API won't total.")(receivables.receivables)
 
-app.add_typer(contact.app, name="contact", help="Customers & vendors: list, get, create.")
-app.add_typer(invoice.app, name="invoice", help="Invoices: list, get, create, finalize, PDF.")
+app.add_typer(contact.app, name="contact", help="Customers & vendors: list, get, create, update.")
+app.add_typer(invoice.app, name="invoice", help="Invoices: list, get, create, finalize, payments, PDF.")
+
+# The six other sales-document types share invoices' shape (see commands/_salesdoc.py).
+app.add_typer(make_group("quotation"), name="quotation", help="Quotations (Angebote): list, get, create, PDF.")
+app.add_typer(make_group("order-confirmation"), name="order-confirmation", help="Order confirmations (Auftragsbestätigungen).")
+app.add_typer(make_group("credit-note"), name="credit-note", help="Credit notes (Gutschriften).")
+app.add_typer(make_group("delivery-note"), name="delivery-note", help="Delivery notes (Lieferscheine).")
+app.add_typer(make_group("down-payment-invoice"), name="down-payment-invoice", help="Down-payment invoices (read-only).")
+app.add_typer(make_group("dunning"), name="dunning", help="Dunnings (Mahnungen) — require a preceding invoice.")
+
+app.add_typer(article.app, name="article", help="Articles: products & services catalogue.")
+app.add_typer(voucher.app, name="voucher", help="Bookkeeping vouchers (accounting entries).")
+app.add_typer(webhook.app, name="webhook", help="Webhooks: subscribe to events, list, delete.")
+app.add_typer(reference.app, name="reference", help="Reference data: countries, categories, payment conditions.")
+app.add_typer(recurring.app, name="recurring", help="Recurring invoice templates (read-only).")
+app.add_typer(file_cmd.app, name="file", help="Download stored files by id.")
 app.add_typer(auth.app, name="auth", help="Log in, log out, inspect credentials.")
 app.add_typer(profile_cmd.app, name="profile", help="The connected organisation — and what your key can do.")
 app.add_typer(raw.app, name="raw", help="Escape hatch: call any API path directly.")

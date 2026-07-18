@@ -45,6 +45,11 @@ START HERE
   lexware-cli invoice list --status overdue
   lexware-cli contact list --customer
 
+COMMAND GROUPS (run `lexware-cli <group> --help` for any)
+  receivables · invoice · contact · quotation · credit-note · order-confirmation ·
+  delivery-note · down-payment-invoice · dunning · article · voucher · webhook ·
+  reference · recurring · file · profile · auth · raw · settings · context · install
+
 KEY GOTCHAS (each verified against the real API — save yourself a wrong answer)
   - `overdue` exists ONLY in the invoice LIST (voucherlist); a single invoice's
     own status stays `open`. Aging comes from the due date, not the status.
@@ -56,7 +61,7 @@ KEY GOTCHAS (each verified against the real API — save yourself a wrong answer
     the assigned customer/vendor number.
   - Money is gross/net with tax; amounts are decimals, not to be re-rounded.
 
-TOPICS:  receivables · invoices · contacts · auth · pacing · output · gotchas
+TOPICS:  receivables · invoices · documents · webhooks · contacts · auth · pacing · output · gotchas
 """
 
 TOPICS: dict[str, str] = {
@@ -86,6 +91,38 @@ INVOICES
   required, defaults to open). `create` makes a DRAFT unless `--finalize` (which
   assigns a number and issues it — one-way). `pdf` needs a FINALIZED invoice; a
   draft returns a conflict. `--open` previews in your system viewer (no-ops headless).
+""",
+    "documents": """\
+SALES DOCUMENTS (beyond invoices)
+
+  Each type is its own group with the same shape — list (via voucherlist, needs a
+  --status), get, create (draft unless --finalize), and PDF where it applies:
+
+    lexware-cli quotation list --status open
+    lexware-cli quotation create --contact <id> --item "Angebot" --net 5000
+    lexware-cli credit-note create --contact <id> --item "Gutschrift" --net 100 --preceding <invoiceId>
+    lexware-cli delivery-note create --contact <id> --item "Ware"      # no prices
+    lexware-cli order-confirmation list --status open
+    lexware-cli down-payment-invoice get <id>                          # read-only
+    lexware-cli dunning create --contact <id> --item "Mahnung" --preceding <invoiceId>
+
+  Notes: dunnings REQUIRE a --preceding invoice; down-payment-invoices are
+  read-only; delivery-notes carry no money. All follow the draft/finalize rule.
+  Bookkeeping (income/expense) entries live under `lexware-cli voucher`, and the
+  product catalogue under `lexware-cli article`.
+""",
+    "webhooks": """\
+WEBHOOKS — "tell me when things change"
+
+  lexware-cli webhook events                       # what you can subscribe to
+  lexware-cli webhook subscribe --event invoice.created --url https://you/hook
+  lexware-cli webhook list
+  lexware-cli webhook get <subscriptionId>
+  lexware-cli webhook delete <subscriptionId>
+
+  Register an HTTPS callback for an event (contact.changed, invoice.created,
+  payment.changed, ...). Lexware POSTs the event + affected resource id to your URL
+  when it fires; you then fetch the detail. Preview a subscribe with `--dry-run`.
 """,
     "contacts": """\
 CONTACTS (customers & vendors)
