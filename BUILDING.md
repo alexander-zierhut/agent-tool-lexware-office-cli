@@ -178,11 +178,22 @@ to the CWD silently, exit 0, in OpenProject for four releases.)
   this one is uncontested. Dist: `agent-tool-lexware-cli`.
 - **Auth is a single API key** — simpler than the others. No basic auth, no OAuth
   dance for the public API. `Authorization: Bearer <key>`.
-- **Rate limit is REAL and low: 2 req/sec → HTTP 429.** The client's retry matrix
-  must treat 429 as retryable with backoff (honour `Retry-After` if present), and
-  paginating/fan-out commands must self-throttle. This is stricter than any sibling
-  — grafana retried 429 but never had to *pace* itself. Consider a token-bucket in
-  the client, or a small sleep between pages.
+- **Rate limit is REAL and low: 2 req/sec → HTTP 429 — the client MUST rate-limit
+  AND retry. Non-negotiable, and confirmed live** (a burst earned an instant 429;
+  pacing at ~1.4/s ran clean). This is stricter than any sibling — grafana retried
+  429 but never had to *pace* itself. The full spec is `spike/LIVE_FINDINGS.md §0`;
+  in short, `client.py` needs **both**:
+    1. **Proactive token bucket** — target ≤ ~1.5 req/s and gate *every* request
+       through it (there are **no `X-RateLimit`/`Retry-After` headers**, so you
+       cannot react your way to correctness — you must not over-emit). Each page of
+       a sweep counts; the AR-aging fan-out inherits this by routing through the one
+       client.
+    2. **Reactive backoff** — on 429, exponential backoff + jitter, capped attempts.
+       Encode two live subtleties: a **429 can masquerade as HTTP 500** (body
+       *"Internal server error or rate limit exceeded"*) → retryable; and a **504
+       may have SUCCEEDED** → do NOT blind-retry a non-idempotent POST (verify with
+       a GET first, or you double-create an invoice).
+  The paced `request()` in the spike is the working prototype — port its shape.
 - **Optimistic locking via `version`** — like OpenProject's `lockVersion`. Every
   PUT needs the current `version`; a stale one is a conflict (exit 6). The
   read-modify-write pattern (fetch, mutate, PUT the whole body back) is the same
