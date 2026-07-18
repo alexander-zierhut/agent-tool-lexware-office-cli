@@ -10,7 +10,7 @@ from typing import Any
 
 from agentcli.errors import ConfigError
 
-from .spec import SPEC
+from .spec import SPEC, credentials
 
 DEFAULT_PROFILE = "default"
 PROD_URL = "https://api.lexware.io"
@@ -105,6 +105,12 @@ class Config:
         if prof is None:
             if env_url:
                 return Profile(name=name, base_url=env_url)
+            # A resolvable token (env var, keyring, or fallback file) is enough to
+            # bootstrap the default (production) profile — this is the documented
+            # "just export LEXWARE_API_KEY" path. Without it, that env var alone
+            # failed with the very error that then told you to set LEXWARE_API_KEY.
+            if credentials.get_token(name):
+                return Profile(name=name, base_url=PROD_URL)
             raise ConfigError(
                 f"no profile '{name}' configured. Run `lexware-office auth login` "
                 f"or set LEXWARE_API_KEY (+ LEXWARE_URL for the sandbox)."
