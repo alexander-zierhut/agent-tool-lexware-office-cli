@@ -193,7 +193,15 @@ to the CWD silently, exit 0, in OpenProject for four releases.)
        *"Internal server error or rate limit exceeded"*) → retryable; and a **504
        may have SUCCEEDED** → do NOT blind-retry a non-idempotent POST (verify with
        a GET first, or you double-create an invoice).
-  The paced `request()` in the spike is the working prototype — port its shape.
+  **A tested reference limiter already exists: `spike/reference/rate_limiter.py`
+  (+ `test_rate_limiter.py`, 9/9 hermetic). Port it into `client.py`.** It is a
+  blocking token bucket whose `acquire()` auto-delays every request — the user's
+  ask ("track the rate limit and automatically delay") made concrete. Key measured
+  default: **burst=1 (no bursting).** A first draft with burst=3 at 1.8/s 429'd on
+  the *third* back-to-back request live — the API's burst tolerance is nil — while
+  burst=1 at ~1.3/s ran 16/16 clean. `penalize()` halves the rate on a stray 429
+  (co-tenant/jitter) and `relax()` drifts it back; the retry layer is the backstop,
+  the bucket is the primary defense.
 - **Optimistic locking via `version`** — like OpenProject's `lockVersion`. Every
   PUT needs the current `version`; a stale one is a conflict (exit 6). The
   read-modify-write pattern (fetch, mutate, PUT the whole body back) is the same

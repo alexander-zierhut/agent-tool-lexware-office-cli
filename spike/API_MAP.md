@@ -151,6 +151,25 @@ killer-feature signal of the four tools.
 
 ---
 
+## 5a. Scope boundary — what the API does NOT cover
+
+The public API documents exactly **20 endpoints** (Articles, Contacts, Countries,
+Credit Notes, Delivery Notes, Down Payment Invoices, Dunnings, Event Subscriptions,
+Files, Invoices, Order Confirmations, Payment Conditions, Payments, Posting
+Categories, Print Layouts, Profile, Quotations, Recurring Templates, Voucherlist,
+Vouchers). All are invoicing / bookkeeping / contact. **Explicitly absent:**
+
+- **Payroll** — zero presence in the docs (no payroll/Lohn/Gehalt/salary). That is
+  a separate product (*Lexware Lohn+Gehalt*); the CLI cannot and should not claim it.
+- **Bank-account management** — no endpoints to manage accounts, fetch bank
+  transactions, or reconcile. "Bank account" appears only as **read-only payment
+  metadata**: a payment's type can be `partPaymentFinancialTransaction` ("linked to
+  a bank account") vs `manualPayment`, and a record may carry a bank-account field.
+  The CLI can *report* how something was paid; it cannot drive banking.
+
+State this in the `guide` so an agent never tries to make the CLI do payroll or
+banking — it will only waste turns discovering the endpoints don't exist.
+
 ## 6. Family-fit notes
 
 - **Pagination = OpenProject's stop-rule** (authoritative total), NOT drone's.
