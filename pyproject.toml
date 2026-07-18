@@ -3,7 +3,7 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "agent-tool-lexware-cli"
+name = "agent-tool-lexware-office-cli"
 dynamic = ["version"]
 description = "Agent-ready command-line interface for Lexware Office — contacts, invoices, and the receivables/AR-aging the API refuses to total for you."
 readme = "README.md"
@@ -36,17 +36,17 @@ test = ["pytest>=8", "pytest-timeout>=2.3"]
 build = ["pyinstaller>=6"]
 
 [project.urls]
-Homepage = "https://github.com/alexander-zierhut/agent-tool-lexware-cli"
-Repository = "https://github.com/alexander-zierhut/agent-tool-lexware-cli"
+Homepage = "https://github.com/alexander-zierhut/agent-tool-lexware-office-cli"
+Repository = "https://github.com/alexander-zierhut/agent-tool-lexware-office-cli"
 
 [project.scripts]
-lexware-cli = "lexwarecli.cli:main"
+lexware-office = "lexwareoffice.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
 
 [tool.setuptools.dynamic]
-version = { attr = "lexwarecli.__version__" }
+version = { attr = "lexwareoffice.__version__" }
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

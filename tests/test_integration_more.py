@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import pytest
 
-from lexwarecli.errors import ValidationError
+from lexwareoffice.errors import ValidationError
 
 pytestmark = pytest.mark.integration
 

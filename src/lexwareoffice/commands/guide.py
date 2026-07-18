@@ -1,4 +1,4 @@
-"""`lexware-cli guide` — the built-in operating manual.
+"""`lexware-office guide` — the built-in operating manual.
 
 Works with no config, no key and no network — it is what an agent runs first.
 """
@@ -8,7 +8,7 @@ from __future__ import annotations
 import typer
 
 OVERVIEW = """\
-lexware-cli — operating guide (run `lexware-cli guide <topic>` for details)
+lexware-office — operating guide (run `lexware-office guide <topic>` for details)
 
 WHAT IT IS
   A CLI for Lexware Office (invoicing/bookkeeping SaaS): customers & vendors,
@@ -25,12 +25,12 @@ OUTPUT CONTRACT
     `--exit-code` to get exit 20 when something is overdue.
 
 AUTHENTICATE
-  Interactive:   lexware-cli auth login            (shows where to get a key)
-                 lexware-cli auth login --sandbox   (the test API)
+  Interactive:   lexware-office auth login            (shows where to get a key)
+                 lexware-office auth login --sandbox   (the test API)
   Headless:      export LEXWARE_API_KEY=xxxxxxxx
                  export LEXWARE_URL=https://api.lexware-sandbox.io   # sandbox only
   Get a key:     <your-lexware>/addons/public-api
-  Check:         lexware-cli auth status   (names which key/backend is in use)
+  Check:         lexware-office auth status   (names which key/backend is in use)
 
 THE ONE THING TO KNOW: THE CLIENT PACES ITSELF
   The API allows ~2 requests/second org-wide and sends no rate-limit headers, so
@@ -39,13 +39,13 @@ THE ONE THING TO KNOW: THE CLIENT PACES ITSELF
   rare 429 (a shared budget) it backs off and retries; exit 8 means it gave up.
 
 START HERE
-  lexware-cli receivables              # who owes me money + AR aging (the point)
-  lexware-cli receivables --view customers
-  lexware-cli receivables --view dunning     # who to chase, worst first
-  lexware-cli invoice list --status overdue
-  lexware-cli contact list --customer
+  lexware-office receivables              # who owes me money + AR aging (the point)
+  lexware-office receivables --view customers
+  lexware-office receivables --view dunning     # who to chase, worst first
+  lexware-office invoice list --status overdue
+  lexware-office contact list --customer
 
-COMMAND GROUPS (run `lexware-cli <group> --help` for any)
+COMMAND GROUPS (run `lexware-office <group> --help` for any)
   receivables · invoice · contact · quotation · credit-note · order-confirmation ·
   delivery-note · down-payment-invoice · dunning · article · voucher · webhook ·
   reference · recurring · file · profile · auth · raw · settings · context · install
@@ -68,11 +68,11 @@ TOPICS: dict[str, str] = {
     "receivables": """\
 RECEIVABLES — the killer feature ("who owes me money?")
 
-  lexware-cli receivables                     # AR aging ladder + totals
-  lexware-cli receivables --view customers    # per-customer rollup, worst first
-  lexware-cli receivables --view dunning      # overdue invoices to chase
-  lexware-cli receivables --view dunning --min-days 14
-  lexware-cli receivables --exit-code         # exit 20 if anything is overdue
+  lexware-office receivables                     # AR aging ladder + totals
+  lexware-office receivables --view customers    # per-customer rollup, worst first
+  lexware-office receivables --view dunning      # overdue invoices to chase
+  lexware-office receivables --view dunning --min-days 14
+  lexware-office receivables --exit-code         # exit 20 if anything is overdue
 
   The API answers per-invoice and refuses the aggregate. This sweeps the invoice
   list once (paced automatically), sums **openAmount** per customer, and ages each
@@ -82,10 +82,10 @@ RECEIVABLES — the killer feature ("who owes me money?")
     "invoices": """\
 INVOICES
 
-  lexware-cli invoice list --status open|overdue|paid|draft|voided
-  lexware-cli invoice get <id>
-  lexware-cli invoice create --contact <id> --item "Beratung" --net 800 [--finalize]
-  lexware-cli invoice pdf <id> --out inv.pdf [--open]
+  lexware-office invoice list --status open|overdue|paid|draft|voided
+  lexware-office invoice get <id>
+  lexware-office invoice create --contact <id> --item "Beratung" --net 800 [--finalize]
+  lexware-office invoice pdf <id> --out inv.pdf [--open]
 
   `list` goes through the voucherlist hub (the only list view; a status is
   required, defaults to open). `create` makes a DRAFT unless `--finalize` (which
@@ -98,27 +98,27 @@ SALES DOCUMENTS (beyond invoices)
   Each type is its own group with the same shape — list (via voucherlist, needs a
   --status), get, create (draft unless --finalize), and PDF where it applies:
 
-    lexware-cli quotation list --status open
-    lexware-cli quotation create --contact <id> --item "Angebot" --net 5000
-    lexware-cli credit-note create --contact <id> --item "Gutschrift" --net 100 --preceding <invoiceId>
-    lexware-cli delivery-note create --contact <id> --item "Ware"      # no prices
-    lexware-cli order-confirmation list --status open
-    lexware-cli down-payment-invoice get <id>                          # read-only
-    lexware-cli dunning create --contact <id> --item "Mahnung" --preceding <invoiceId>
+    lexware-office quotation list --status open
+    lexware-office quotation create --contact <id> --item "Angebot" --net 5000
+    lexware-office credit-note create --contact <id> --item "Gutschrift" --net 100 --preceding <invoiceId>
+    lexware-office delivery-note create --contact <id> --item "Ware"      # no prices
+    lexware-office order-confirmation list --status open
+    lexware-office down-payment-invoice get <id>                          # read-only
+    lexware-office dunning create --contact <id> --item "Mahnung" --preceding <invoiceId>
 
   Notes: dunnings REQUIRE a --preceding invoice; down-payment-invoices are
   read-only; delivery-notes carry no money. All follow the draft/finalize rule.
-  Bookkeeping (income/expense) entries live under `lexware-cli voucher`, and the
-  product catalogue under `lexware-cli article`.
+  Bookkeeping (income/expense) entries live under `lexware-office voucher`, and the
+  product catalogue under `lexware-office article`.
 """,
     "webhooks": """\
 WEBHOOKS — "tell me when things change"
 
-  lexware-cli webhook events                       # what you can subscribe to
-  lexware-cli webhook subscribe --event invoice.created --url https://you/hook
-  lexware-cli webhook list
-  lexware-cli webhook get <subscriptionId>
-  lexware-cli webhook delete <subscriptionId>
+  lexware-office webhook events                       # what you can subscribe to
+  lexware-office webhook subscribe --event invoice.created --url https://you/hook
+  lexware-office webhook list
+  lexware-office webhook get <subscriptionId>
+  lexware-office webhook delete <subscriptionId>
 
   Register an HTTPS callback for an event (contact.changed, invoice.created,
   payment.changed, ...). Lexware POSTs the event + affected resource id to your URL
@@ -127,10 +127,10 @@ WEBHOOKS — "tell me when things change"
     "contacts": """\
 CONTACTS (customers & vendors)
 
-  lexware-cli contact list [--customer|--vendor] [--name Muster] [--email a@b]
-  lexware-cli contact get <id>
-  lexware-cli contact create --company "Muster GmbH" --role customer
-  lexware-cli contact create --first-name Erika --last-name Muster --role customer
+  lexware-office contact list [--customer|--vendor] [--name Muster] [--email a@b]
+  lexware-office contact get <id>
+  lexware-office contact create --company "Muster GmbH" --role customer
+  lexware-office contact create --first-name Erika --last-name Muster --role customer
 
   A contact is a company XOR a person, with at least one role. `create` returns an
   action-result; the assigned customer/vendor number is fetched and included.
@@ -139,10 +139,10 @@ CONTACTS (customers & vendors)
     "auth": """\
 AUTHENTICATION
 
-  lexware-cli auth login              # prompts, shows where to get a key, verifies
-  lexware-cli auth login --sandbox    # against api.lexware-sandbox.io
-  lexware-cli auth status             # which key/backend + which organisation
-  lexware-cli auth logout
+  lexware-office auth login              # prompts, shows where to get a key, verifies
+  lexware-office auth login --sandbox    # against api.lexware-sandbox.io
+  lexware-office auth status             # which key/backend + which organisation
+  lexware-office auth logout
 
   Precedence: env (LEXWARE_API_KEY) > OS keyring > 0600 file. `auth status` names
   which one is in use — an exported key silently overrides a stored login.
@@ -201,6 +201,6 @@ def guide(topic: str = typer.Argument(None, help="A topic to expand; omit for th
         return
     body = TOPICS.get(key)
     if body is None:
-        typer.echo(f"No topic {topic!r}. Available:\n  " + "  ".join(sorted(TOPICS)) + "\n\nRun `lexware-cli guide` for the overview.", err=True)
+        typer.echo(f"No topic {topic!r}. Available:\n  " + "  ".join(sorted(TOPICS)) + "\n\nRun `lexware-office guide` for the overview.", err=True)
         raise typer.Exit(2)
     typer.echo(body)

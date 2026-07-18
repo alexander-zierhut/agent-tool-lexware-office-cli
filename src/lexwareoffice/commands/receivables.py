@@ -1,4 +1,4 @@
-"""`lexware-cli receivables` — the killer feature.
+"""`lexware-office receivables` — the killer feature.
 
 The Lexware API answers per-invoice and refuses the aggregate. This command sweeps
 `voucherlist` once (paced under the rate limit), then totals what is owed, ages it,

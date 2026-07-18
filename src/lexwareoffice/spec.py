@@ -5,8 +5,8 @@ from __future__ import annotations
 from agentcli import AppSpec, Credentials
 
 SPEC = AppSpec(
-    name="lexware-cli",
-    env_prefix="LEXWARECLI",
+    name="lexware-office",
+    env_prefix="LEXWAREOFFICE",
     # The ecosystem's names, honoured AFTER ours. Lexware's own SDKs and most CI
     # recipes export LEXWARE_API_KEY (and the older LEXOFFICE_API_KEY).
     token_env_aliases=("LEXWARE_API_KEY", "LEXOFFICE_API_KEY"),

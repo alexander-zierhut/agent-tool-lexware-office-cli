@@ -1,4 +1,4 @@
-"""`lexware-cli profile` — the connected organisation, and a reachability check."""
+"""`lexware-office profile` — the connected organisation, and a reachability check."""
 
 from __future__ import annotations
 

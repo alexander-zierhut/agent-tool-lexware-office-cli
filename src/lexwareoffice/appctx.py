@@ -24,7 +24,7 @@ class AppContext:
             self.output,
             color=color,
             fields=self._resolve_fields(),
-            stream=os.environ.get("LEXWARECLI_STREAM") == "1",
+            stream=os.environ.get("LEXWAREOFFICE_STREAM") == "1",
         )
         self._client: Client | None = None
         if self.interactive:
@@ -34,7 +34,7 @@ class AppContext:
     def _resolve_format(self, explicit: OutputFormat | None) -> OutputFormat:
         if explicit is not None:
             return explicit
-        cli_fmt = os.environ.get("LEXWARECLI_CLI_FORMAT")
+        cli_fmt = os.environ.get("LEXWAREOFFICE_CLI_FORMAT")
         if cli_fmt:
             return OutputFormat.coerce(cli_fmt)  # raises -> caught by main(), exit 1
         for src in (SPEC.getenv("FORMAT"), self.config.default_format):
@@ -69,7 +69,7 @@ class AppContext:
         try:
             self.config.default_format = fmt.value
             self.config.save()
-            sys.stderr.write("Saved. Change it: `lexware-cli settings set-format <fmt>`\n\n")
+            sys.stderr.write("Saved. Change it: `lexware-office settings set-format <fmt>`\n\n")
         except Exception:
             pass
         return fmt
@@ -85,16 +85,16 @@ class AppContext:
             self.config.claude_prompted = True
             self.config.save()
             sys.stderr.write(
-                "\nClaude Code is installed here. Register `lexware-cli` as a skill, so Claude\n"
+                "\nClaude Code is installed here. Register `lexware-office` as a skill, so Claude\n"
                 "uses it when you mention Lexware Office invoices/contacts/receivables?\n"
                 "  writes ~/.claude/skills/lexware-office/SKILL.md — undo with "
-                "`lexware-cli install claude --uninstall`\n"
+                "`lexware-office install claude --uninstall`\n"
                 "Install it? [y/N]: "
             )
             sys.stderr.flush()
             ans = (sys.stdin.readline() or "").strip().lower()
             if ans not in ("y", "yes"):
-                sys.stderr.write("Skipped — change your mind any time: `lexware-cli install claude`\n\n")
+                sys.stderr.write("Skipped — change your mind any time: `lexware-office install claude`\n\n")
                 return
             path = install.write_skill()
             sys.stderr.write(f"Installed {path}\nStart a new Claude session to pick it up.\n\n")
@@ -103,7 +103,7 @@ class AppContext:
 
     @staticmethod
     def _resolve_fields() -> list[str] | None:
-        raw = os.environ.get("LEXWARECLI_CLI_FIELDS")
+        raw = os.environ.get("LEXWAREOFFICE_CLI_FIELDS")
         if not raw:
             return None
         return [f.strip() for f in raw.split(",") if f.strip()]
@@ -115,14 +115,14 @@ class AppContext:
             token = credentials.get_token(self.config.active_profile_name())
             if not token:
                 raise ConfigError(
-                    "no API key. Run `lexware-cli auth login`, or set LEXWARE_API_KEY "
+                    "no API key. Run `lexware-office auth login`, or set LEXWARE_API_KEY "
                     f"(create one at {token_url(prof.base_url)})."
                 )
             self._client = Client(
                 prof.base_url,
                 token,
                 verify_ssl=prof.verify_ssl,
-                dry_run=os.environ.get("LEXWARECLI_DRY_RUN") == "1",
-                user_agent=f"agent-tool-lexware-cli/{__version__}",
+                dry_run=os.environ.get("LEXWAREOFFICE_DRY_RUN") == "1",
+                user_agent=f"agent-tool-lexware-office-cli/{__version__}",
             )
         return self._client

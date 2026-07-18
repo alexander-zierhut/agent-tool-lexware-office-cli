@@ -106,7 +106,7 @@ class Config:
             if env_url:
                 return Profile(name=name, base_url=env_url)
             raise ConfigError(
-                f"no profile '{name}' configured. Run `lexware-cli auth login` "
+                f"no profile '{name}' configured. Run `lexware-office auth login` "
                 f"or set LEXWARE_API_KEY (+ LEXWARE_URL for the sandbox)."
             )
         return Profile(

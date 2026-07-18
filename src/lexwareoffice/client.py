@@ -95,7 +95,7 @@ class Client:
         timeout: float = 35.0,
         dry_run: bool = False,
         rate: float = 1.3,
-        user_agent: str = "agent-tool-lexware-cli",
+        user_agent: str = "agent-tool-lexware-office-cli",
     ) -> None:
         self.api_root = base_url.rstrip("/") + "/v1"
         self.web_root = base_url.rstrip("/")

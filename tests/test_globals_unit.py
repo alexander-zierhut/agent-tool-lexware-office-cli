@@ -8,7 +8,7 @@ import pytest
 from typer.main import get_command
 from typer.testing import CliRunner
 
-from lexwarecli.cli import _BOOL_FLAGS, _FIELDS_FLAGS, _FORMAT_FLAGS, _pop_globals, app
+from lexwareoffice.cli import _BOOL_FLAGS, _FIELDS_FLAGS, _FORMAT_FLAGS, _pop_globals, app
 
 RESERVED = set(_FORMAT_FLAGS) | set(_FIELDS_FLAGS) | set(_BOOL_FLAGS)
 
@@ -40,7 +40,7 @@ def test_no_command_declares_a_reserved_global():
                 continue
             clash = sorted(set(p.opts) & RESERVED)
             if clash:
-                offenders.append(f"  `lexware-cli {path}` declares {clash}")
+                offenders.append(f"  `lexware-office {path}` declares {clash}")
     assert not offenders, "reserved globals can never be received:\n" + "\n".join(offenders)
 
 
@@ -48,7 +48,7 @@ def test_file_outputs_use_out_not_output():
     """--output is a reserved format flag; any file destination must be --out."""
     for path, cmd in _leaves():
         opts = {o for p in cmd.params for o in getattr(p, "opts", [])}
-        assert "--output" not in opts, f"`lexware-cli {path}` uses --output (reserved); use --out"
+        assert "--output" not in opts, f"`lexware-office {path}` uses --output (reserved); use --out"
 
 
 # ---- _pop_globals ----------------------------------------------------
@@ -72,13 +72,13 @@ def test_double_dash_stops_parsing():
 # ---- guide honesty ---------------------------------------------------
 
 def test_guide_commands_all_exist():
-    from lexwarecli.commands import guide as G
+    from lexwareoffice.commands import guide as G
 
     real = {p for p, _ in _leaves() if p}
     groups = {p.split()[0] for p in real}
     text = G.OVERVIEW + "".join(G.TOPICS.values())
     named = set()
-    for m in re.finditer(r"\blexware-cli\s+([a-z][\w-]*)(?:\s+([a-z][\w-]*))?", text):
+    for m in re.finditer(r"\blexware-office\s+([a-z][\w-]*)(?:\s+([a-z][\w-]*))?", text):
         first, second = m.group(1), m.group(2)
         cand = f"{first} {second}" if second else first
         named.add((cand, first))
@@ -93,7 +93,7 @@ def test_guide_commands_all_exist():
 
 
 def test_guide_has_a_gotchas_topic():
-    from lexwarecli.commands import guide as G
+    from lexwareoffice.commands import guide as G
 
     assert "gotchas" in G.TOPICS
 
@@ -105,19 +105,19 @@ def test_every_topic_renders(topic):
 
 
 def test_guide_needs_no_config(monkeypatch, tmp_path):
-    monkeypatch.setenv("LEXWARECLI_CONFIG_DIR", str(tmp_path / "nope"))
+    monkeypatch.setenv("LEXWAREOFFICE_CONFIG_DIR", str(tmp_path / "nope"))
     r = CliRunner().invoke(app, ["guide"])
-    assert r.exit_code == 0 and "lexware-cli" in r.stdout
+    assert r.exit_code == 0 and "lexware-office" in r.stdout
 
 
 def test_skill_only_names_real_commands():
-    from lexwarecli.commands import guide as G  # noqa: F401
-    from lexwarecli.commands import install as I
+    from lexwareoffice.commands import guide as G  # noqa: F401
+    from lexwareoffice.commands import install as I
 
     real = {p for p, _ in _leaves() if p}
     groups = {p.split()[0] for p in real}
     broken = []
-    for m in re.finditer(r"`lexware-cli\s+([a-z][\w-]*)(?:\s+([a-z][\w|-]*))?", I.SKILL_MD):
+    for m in re.finditer(r"`lexware-office\s+([a-z][\w-]*)(?:\s+([a-z][\w|-]*))?", I.SKILL_MD):
         head = m.group(1)
         if head not in groups and head not in real:
             broken.append(head)

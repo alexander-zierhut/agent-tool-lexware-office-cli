@@ -11,8 +11,8 @@ from datetime import date, timedelta
 
 import pytest
 
-from lexwarecli.errors import ConflictError, NotFoundError, ValidationError
-from lexwarecli.receivables import enrich, summarise
+from lexwareoffice.errors import ConflictError, NotFoundError, ValidationError
+from lexwareoffice.receivables import enrich, summarise
 
 pytestmark = pytest.mark.integration
 
@@ -134,7 +134,7 @@ def test_the_client_paces_itself_under_the_real_limit(mock_server):
                 urllib.request.urlopen(f"{base}/__mock__/health", timeout=1); break
             except Exception:
                 time.sleep(0.1)
-        from lexwarecli.client import Client
+        from lexwareoffice.client import Client
         c = Client(base, "k")  # default rate 1.3, burst 1
         codes_ok = 0
         for _ in range(8):

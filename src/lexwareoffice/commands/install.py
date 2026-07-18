@@ -1,4 +1,4 @@
-"""`lexware-cli install claude` — register this CLI with Claude Code as a Skill.
+"""`lexware-office install claude` — register this CLI with Claude Code as a Skill.
 
 Machinery is verbatim from the sibling CLIs (same function names — `appctx.py`'s
 first-run offer calls them by name). What's fresh is `SKILL_MD`: every trigger is
@@ -20,14 +20,14 @@ from ._shared import ctx_obj
 app = typer.Typer(no_args_is_help=True)
 
 SKILL_NAME = "lexware-office"
-_MEM_START = "<!-- lexware-cli:start -->"
-_MEM_END = "<!-- lexware-cli:end -->"
+_MEM_START = "<!-- lexware-office:start -->"
+_MEM_END = "<!-- lexware-office:end -->"
 
 SKILL_MD = f"""\
 ---
 name: lexware-office
 description: >-
-  Work with Lexware Office (lexoffice) via the `lexware-cli` command — see
+  Work with Lexware Office (lexoffice) via the `lexware-office` command — see
   outstanding receivables and AR aging for Lexware Office invoices (who owes
   money and how overdue), list and read Lexware Office invoices, create a
   Lexware Office invoice and download its PDF, list Lexware Office customers and
@@ -37,41 +37,41 @@ description: >-
   their outstanding receivables / overdue invoices.
 ---
 
-# Lexware Office CLI (agent-tool-lexware-cli v{__version__})
+# Lexware Office CLI (agent-tool-lexware-office-cli v{__version__})
 
-The `lexware-cli` command is installed on this machine and talks to the user's
+The `lexware-office` command is installed on this machine and talks to the user's
 Lexware Office account over its REST API.
 
 ## Start here: the number the API refuses to total
 
-Lexware answers per-invoice and will not aggregate. `lexware-cli receivables`
+Lexware answers per-invoice and will not aggregate. `lexware-office receivables`
 derives it: total outstanding, the 0-30/31-60/61-90/90+ aging ladder, a
 per-customer rollup (`--view customers`), and who to chase (`--view dunning`).
 
-    lexware-cli receivables
-    lexware-cli receivables --view dunning
-    lexware-cli invoice list --status overdue
+    lexware-office receivables
+    lexware-office receivables --view dunning
+    lexware-office invoice list --status overdue
 
 ## Commands
-- `lexware-cli guide` — the built-in manual, with its own topic list.
-- `lexware-cli receivables [--view aging|customers|dunning]` — the killer feature.
-- `lexware-cli invoice list|get|create|finalize|payments|pdf` — `list` needs a
+- `lexware-office guide` — the built-in manual, with its own topic list.
+- `lexware-office receivables [--view aging|customers|dunning]` — the killer feature.
+- `lexware-office invoice list|get|create|finalize|payments|pdf` — `list` needs a
   --status (default open); `pdf` needs a FINALIZED invoice; `create` drafts unless --finalize.
-- `lexware-cli contact list|get|create|update` — customers & vendors.
-- Other sales documents, same shape: `lexware-cli quotation|credit-note|order-confirmation|delivery-note|down-payment-invoice|dunning list|get|create` (dunnings need --preceding; down-payment-invoices are read-only).
-- `lexware-cli article list|get|create|delete` — products/services catalogue.
-- `lexware-cli voucher list|get|delete` — bookkeeping vouchers.
-- `lexware-cli webhook subscribe|list|get|delete|events` — event subscriptions.
-- `lexware-cli reference countries|posting-categories|payment-conditions|print-layouts`.
-- `lexware-cli recurring list|get` — recurring templates. `lexware-cli file download <id> --out`.
-- `lexware-cli profile show|doctor` — the connected organisation + a health check.
-- `lexware-cli auth login|status|logout` — `login --sandbox` for the test API.
-- `lexware-cli raw get|post|put|delete <path>` — escape hatch (paths relative to /v1).
-- `lexware-cli settings`, `lexware-cli context`, `lexware-cli install claude`.
+- `lexware-office contact list|get|create|update` — customers & vendors.
+- Other sales documents, same shape: `lexware-office quotation|credit-note|order-confirmation|delivery-note|down-payment-invoice|dunning list|get|create` (dunnings need --preceding; down-payment-invoices are read-only).
+- `lexware-office article list|get|create|delete` — products/services catalogue.
+- `lexware-office voucher list|get|delete` — bookkeeping vouchers.
+- `lexware-office webhook subscribe|list|get|delete|events` — event subscriptions.
+- `lexware-office reference countries|posting-categories|payment-conditions|print-layouts`.
+- `lexware-office recurring list|get` — recurring templates. `lexware-office file download <id> --out`.
+- `lexware-office profile show|doctor` — the connected organisation + a health check.
+- `lexware-office auth login|status|logout` — `login --sandbox` for the test API.
+- `lexware-office raw get|post|put|delete <path>` — escape hatch (paths relative to /v1).
+- `lexware-office settings`, `lexware-office context`, `lexware-office install claude`.
 
 ## Output contract
 - Default output is JSON on stdout — parse it.
-- Exception: `lexware-cli invoice pdf` writes a PDF FILE; the JSON reports its path.
+- Exception: `lexware-office invoice pdf` writes a PDF FILE; the JSON reports its path.
 - Errors are JSON on stderr with a non-zero exit code.
 - Trim with `--fields voucherNumber,openAmount`; `-o table` for humans; `-o csv`.
 
@@ -86,10 +86,10 @@ auto-delays every request to stay under it. A big `receivables` sweep just takes
 longer — never add your own sleeps.
 
 ## Auth
-    lexware-cli auth login             # prompts, shows where to get a key, verifies
-    lexware-cli auth login --sandbox   # api.lexware-sandbox.io
-If not configured, ask the user to run `lexware-cli auth login` (or set
-LEXWARE_API_KEY, + LEXWARE_URL for the sandbox). `lexware-cli auth status` names
+    lexware-office auth login             # prompts, shows where to get a key, verifies
+    lexware-office auth login --sandbox   # api.lexware-sandbox.io
+If not configured, ask the user to run `lexware-office auth login` (or set
+LEXWARE_API_KEY, + LEXWARE_URL for the sandbox). `lexware-office auth status` names
 which key/backend is actually in use.
 
 ## Make changes safely
@@ -108,9 +108,9 @@ Preview ANY write with a global `--dry-run`. Finalizing an invoice is ONE-WAY
 
 _MEMORY_HINT = (
     f"{_MEM_START}\n"
-    "The `lexware-cli` CLI (package agent-tool-lexware-cli) is installed — an "
-    "agent-ready Lexware Office client with JSON output. `lexware-cli receivables` "
-    "shows who owes money + AR aging. Run `lexware-cli guide` to learn it.\n"
+    "The `lexware-office` CLI (package agent-tool-lexware-office-cli) is installed — an "
+    "agent-ready Lexware Office client with JSON output. `lexware-office receivables` "
+    "shows who owes money + AR aging. Run `lexware-office guide` to learn it.\n"
     f"{_MEM_END}\n"
 )
 
@@ -176,7 +176,7 @@ def claude(
     uninstall: bool = typer.Option(False, "--uninstall", help="Remove the skill (and memory hint)."),
     print_: bool = typer.Option(False, "--print", help="Print the SKILL.md that would be written and exit."),
 ) -> None:
-    """Register `lexware-cli` with Claude Code as a Skill. Reversible with --uninstall."""
+    """Register `lexware-office` with Claude Code as a Skill. Reversible with --uninstall."""
     obj = ctx_obj(ctx)
     if print_:
         typer.echo(SKILL_MD)

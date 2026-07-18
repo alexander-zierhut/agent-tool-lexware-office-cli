@@ -9,7 +9,7 @@ from datetime import date
 
 import pytest
 
-from lexwarecli.receivables import (
+from lexwareoffice.receivables import (
     bucket_for,
     by_customer,
     days_overdue,

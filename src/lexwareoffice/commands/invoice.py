@@ -73,7 +73,7 @@ def pdf(
     except ConflictError:
         raise ConflictError(
             "cannot render a draft invoice — finalize it first "
-            "(`lexware-cli invoice finalize <id>`), then download the PDF."
+            "(`lexware-office invoice finalize <id>`), then download the PDF."
         )
     if not (isinstance(data, (bytes, bytearray)) and data[:5] == b"%PDF-"):
         raise ValidationError("the server did not return a PDF for this invoice.")

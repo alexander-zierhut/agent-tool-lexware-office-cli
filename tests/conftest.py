@@ -20,15 +20,15 @@ import pytest
 
 _LEAKY = (
     "LEXWARE_API_KEY", "LEXOFFICE_API_KEY", "LEXWARE_URL",
-    "LEXWARECLI_URL", "LEXWARECLI_TOKEN", "LEXWARECLI_PROFILE",
-    "LEXWARECLI_FORMAT", "LEXWARECLI_CLI_FORMAT", "LEXWARECLI_CLI_FIELDS",
-    "LEXWARECLI_DRY_RUN", "LEXWARECLI_STREAM", "LEXWARECLI_NO_CONTEXT",
+    "LEXWAREOFFICE_URL", "LEXWAREOFFICE_TOKEN", "LEXWAREOFFICE_PROFILE",
+    "LEXWAREOFFICE_FORMAT", "LEXWAREOFFICE_CLI_FORMAT", "LEXWAREOFFICE_CLI_FIELDS",
+    "LEXWAREOFFICE_DRY_RUN", "LEXWAREOFFICE_STREAM", "LEXWAREOFFICE_NO_CONTEXT",
 )
 
 
 @pytest.fixture(autouse=True)
 def _hermetic(monkeypatch, tmp_path):
-    monkeypatch.setenv("LEXWARECLI_CONFIG_DIR", str(tmp_path / "config"))
+    monkeypatch.setenv("LEXWAREOFFICE_CONFIG_DIR", str(tmp_path / "config"))
     for v in _LEAKY:
         monkeypatch.delenv(v, raising=False)
     monkeypatch.setenv("PYTHON_KEYRING_BACKEND", "keyring.backends.null.Keyring")
@@ -90,7 +90,7 @@ def client(mock_server):
     # reset the mock's state between tests via a fresh process? Simpler: the mock
     # is stateful per-process; we rely on unique data per test. For a hard reset a
     # test can restart, but most tests create their own contacts/invoices.
-    from lexwarecli.client import Client
+    from lexwareoffice.client import Client
 
     c = Client(mock_server, "test-key", rate=50)  # fast: the mock's own limiter is off
     yield c

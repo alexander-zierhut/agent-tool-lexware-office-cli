@@ -20,17 +20,17 @@ def _version_callback(value: bool) -> None:
 
 
 app = typer.Typer(
-    name="lexware-cli",
+    name="lexware-office",
     help=(
         "Agent-friendly CLI for Lexware Office: contacts, invoices, and the "
         "receivables/AR-aging the API refuses to total for you.\n\n"
         "Output is JSON on stdout by default (errors are JSON on stderr with a "
         "non-zero exit code); add `-o table` or trim with `--fields`. The client "
         "paces itself under the 2 req/s limit automatically.\n\n"
-        "New here? Run `lexware-cli guide`.  Start with `lexware-cli receivables` "
+        "New here? Run `lexware-office guide`.  Start with `lexware-office receivables` "
         "to see who owes you money."
     ),
-    epilog="Learn more:  `lexware-cli guide`  ·  `lexware-cli guide <topic>`",
+    epilog="Learn more:  `lexware-office guide`  ·  `lexware-office guide <topic>`",
     no_args_is_help=True,
     add_completion=False,
     pretty_exceptions_show_locals=False,  # locals hold the API key
@@ -52,7 +52,7 @@ def _root(
     version: bool = typer.Option(None, "--version", "-V", callback=_version_callback, is_eager=True, help="Show version and exit."),
 ) -> None:
     if profile:
-        os.environ["LEXWARECLI_PROFILE"] = profile
+        os.environ["LEXWAREOFFICE_PROFILE"] = profile
     meta = ctx.invoked_subcommand in ("settings", "guide", "install", "context")
     interactive = (
         not meta and sys.stdin.isatty() and sys.stdout.isatty() and os.environ.get("CI") != "true"
@@ -153,15 +153,15 @@ def main() -> None:
 
     fmt, fields, bools, argv = _pop_globals(sys.argv[1:])
     if fmt is not None:
-        os.environ["LEXWARECLI_CLI_FORMAT"] = fmt
+        os.environ["LEXWAREOFFICE_CLI_FORMAT"] = fmt
     if fields is not None:
-        os.environ["LEXWARECLI_CLI_FIELDS"] = fields
+        os.environ["LEXWAREOFFICE_CLI_FIELDS"] = fields
     if "dry-run" in bools:
-        os.environ["LEXWARECLI_DRY_RUN"] = "1"
+        os.environ["LEXWAREOFFICE_DRY_RUN"] = "1"
     if "stream" in bools:
-        os.environ["LEXWARECLI_STREAM"] = "1"
+        os.environ["LEXWAREOFFICE_STREAM"] = "1"
     if "no-context" in bools:
-        os.environ["LEXWARECLI_NO_CONTEXT"] = "1"
+        os.environ["LEXWAREOFFICE_NO_CONTEXT"] = "1"
     try:
         app(args=argv)
     except DryRun as dr:
