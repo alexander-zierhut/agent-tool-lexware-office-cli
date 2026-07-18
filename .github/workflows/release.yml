@@ -68,7 +68,14 @@ jobs:
           python-version: "3.12"
       - run: pip install -e ".[build]"
       - name: Build the single-file binary
-        run: pyinstaller --onefile --name "${{ matrix.asset }}" -c src/lexwareoffice/__main__.py
+        shell: bash
+        run: |
+          # A launcher with an ABSOLUTE import — running __main__.py directly makes
+          # its `from .cli import main` a top-level relative import, which fails
+          # ("no known parent package"). --collect-submodules bundles the command
+          # modules that are imported lazily inside functions.
+          printf 'from lexwareoffice.cli import main\nif __name__ == "__main__":\n    main()\n' > _launcher.py
+          pyinstaller --onefile --name "${{ matrix.asset }}" --collect-submodules lexwareoffice _launcher.py
       - name: Smoke-test it
         shell: bash
         run: ./dist/"${{ matrix.asset }}" --version
