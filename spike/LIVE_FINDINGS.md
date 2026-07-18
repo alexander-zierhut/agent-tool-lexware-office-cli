@@ -112,6 +112,71 @@ Created (all synthetic "Muster/Beispiel" German sample data — no real customer
 - (Articles: 2 attempted; the first pass used lowercase `type` and 400'd — see §2.5;
   re-create with `PRODUCT`/`SERVICE`.)
 
+## 3a. Payments & the paid state (captured live 2026-07-18, user recorded payments)
+
+`GET /v1/payments/{voucherId}` — the receivable/payment view of one document:
+
+```json
+// fully paid (RE26429):
+{ "openAmount": 0.0, "paymentStatus": "balanced", "currency": "EUR",
+  "voucherType": "invoice", "voucherStatus": "paid", "paidDate": "2026-07-18T00:00:00.000+02:00",
+  "paymentItems": [ { "paymentItemType": "manualPayment", "postingDate": "...", "amount": 1166.2, "currency": "EUR" } ] }
+
+// partially paid (RE26427): two payments summing to 98.00, 437.50 still open
+{ "openAmount": 437.5, "paymentStatus": "openRevenue", "currency": "EUR",
+  "voucherType": "invoice", "voucherStatus": "open",
+  "paymentItems": [ { "paymentItemType": "manualPayment", "postingDate": "...", "amount": 50.0, "currency": "EUR" },
+                    { "paymentItemType": "manualPayment", "postingDate": "...", "amount": 48.0, "currency": "EUR" } ] }
+```
+
+Load-bearing findings for the receivables / payment feature:
+
+1. **THREE status vocabularies, not two.** Add the payment view to the two from
+   `API_MAP.md §3`:
+   - voucher RESOURCE `voucherStatus`: `open/paid/paidoff/voided/...` (no overdue)
+   - VOUCHERLIST `voucherStatus`: **adds `overdue`** (derived/transient)
+   - PAYMENTS `paymentStatus`: **`balanced` / `openRevenue` / `openExpense` / ...**
+2. **`overdue` lives ONLY in voucherlist.** Live proof: for the *same* invoice
+   (RE26427), voucherlist says `voucherStatus: overdue` while `/v1/payments`
+   reports `voucherStatus: open`. The payments and resource endpoints never emit
+   `overdue`. **To classify overdue you MUST use voucherlist** (or compute
+   `dueDate < today` yourself). Never trust the resource/payments status for aging.
+3. **Status and balance are INDEPENDENT.** A partial payment does **not** change
+   `voucherStatus` away from `overdue`; it only lowers `openAmount`. The AR feature
+   must sum **`openAmount`** (not `totalAmount`) for what is owed, and use
+   `voucherStatus`/`dueDate` for the aging bucket — the two are orthogonal.
+4. **Partial payment = multiple `paymentItems`** that sum to `total − openAmount`.
+   `paidDate` is present only once fully `balanced`.
+5. **`paymentItemType: "manualPayment"`** — matches the user recording payments
+   "not through the bank account" (vs a bank-reconciled type). The CLI can surface
+   *how* something was paid.
+6. **Drafts have `openAmount: 0`** but are NOT paid — the draft RE26425 shows
+   total 952 / open 0. Never infer "paid" from `openAmount == 0`; gate on
+   `voucherStatus`. (The AR sweep excludes drafts anyway by filtering status.)
+
+The sandbox is now a complete AR fixture: **€4,840.50 outstanding** across a
+current invoice, a partially-paid overdue one, and a fully-unpaid overdue one, plus
+one paid and one draft — everything the receivables command needs to exercise.
+
+## 3b. PDF render + download (validated live 2026-07-18) — a requested CLI feature
+
+The user wants: **after creating an invoice, download the PDF and save it (and
+optionally open it for immediate preview).** The flow works and is confirmed:
+
+- **Preferred, one call:** `GET /v1/invoices/{id}/file` with `Accept: */*` →
+  `200`, `Content-Type: application/pdf`, a real **`%PDF-`** file (59 KB in the
+  test). Save straight to disk.
+- **Legacy two-step (equivalent bytes):** `GET /v1/invoices/{id}/document` →
+  `{"documentFileId": "..."}`, then `GET /v1/files/{documentFileId}` → the PDF.
+  Use `/file`; keep the two-step only as a fallback.
+- **A DRAFT → `409 Conflict`** (`GET .../{draftId}/file`): you cannot render an
+  unfinalized document. The CLI must NOT silently auto-finalize (finalizing is
+  one-way and legally significant) — return the 409 as a clear "finalize first".
+
+Design for `client.py`: the PDF download is the **binary carve-out** — it never
+goes to stdout; it is written to a file and the JSON result reports the path.
+See the feature spec in `../BUILDING.md §5 (invoice create → --pdf/--open)`.
+
 ## 4. Open items / where the user may need to help
 
 - **A "paid" invoice example is missing.** Recording a payment appears to be a

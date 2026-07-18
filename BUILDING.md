@@ -217,10 +217,22 @@ to the CWD silently, exit 0, in OpenProject for four releases.)
   silent, invisible-to-tests financial error). Put money handling in a pure
   `money.py` with tests. Never do float math on currency — the API uses decimals;
   parse and carry them as such.
-- **PDF is a two-step:** render the document, then download the file
-  (`/v1/.../{id}/document` -> file id -> `/v1/files/{id}`). Confirm the exact flow
-  in the spike. The download command writes a file (`--out`), the one non-JSON
-  carve-out.
+- **PDF download + immediate preview — a user-requested feature (flow verified
+  live, `spike/LIVE_FINDINGS.md §3b`).** `GET /v1/invoices/{id}/file` (Accept `*/*`)
+  returns the PDF directly in one call (the `/document`→`{documentFileId}`→`/files/{id}`
+  two-step is a fallback). Build it as:
+    - **`invoice pdf <id> --out PATH [--open]`** — download any finalized invoice's PDF.
+    - **`invoice create ... --pdf [PATH] [--open]`** — after create, chain the download.
+    Rules that keep it inside the agent contract:
+    - The PDF is the **binary carve-out**: it is written to a file (`--out`/`--pdf`,
+      **never `--output`** — reserved), and the JSON on stdout reports the path
+      (`{"pdf": "…/RE1234.pdf", "opened": true}`). Never write binary to stdout.
+    - **`--open` is an opt-in HUMAN affordance** (system viewer: `xdg-open`/`open`/
+      `start`). Default OFF — an agent must not trigger a GUI. In a headless/CI
+      context (no `DISPLAY`, `CI=true`) it **no-ops gracefully** and says so in the
+      JSON, never failing the command.
+    - **A draft cannot be rendered → `409`.** Do NOT auto-finalize (finalizing is
+      one-way and legally significant); surface a clear "finalize first" error (exit 6).
 
 ### The killer feature — derive the number the API refuses to give
 Per the family principle (`[[agent-tool-killer-feature-principle]]`): the Lexware
