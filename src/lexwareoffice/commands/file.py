@@ -20,7 +20,9 @@ def download(
 ) -> None:
     """Download a file by id to `--out`. Binary carve-out — the JSON reports the path."""
     obj = ctx_obj(ctx)
-    data = obj.client().get(f"/files/{file_id}", raw=True)
+    # Accept: */* — a stored file may be any content-type; the default
+    # `Accept: application/json` makes Lexware base64-encode binary bodies.
+    data = obj.client().get(f"/files/{file_id}", raw=True, accept="*/*")
     if not isinstance(data, (bytes, bytearray)):
         raise ValidationError("the server did not return file bytes.")
     dest = Path(out)

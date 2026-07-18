@@ -118,14 +118,16 @@ def make_group(name: str) -> typer.Typer:
             from pathlib import Path
 
             from ._shared import ctx_obj
-            from .invoice import _open_file
+            from .invoice import _as_pdf_bytes, _open_file
 
             obj = ctx_obj(ctx)
             try:
-                data = obj.client().get(f"/{collection}/{doc_id}/file", raw=True)
+                # Accept: application/pdf — else Lexware base64-encodes the body.
+                data = obj.client().get(f"/{collection}/{doc_id}/file", raw=True, accept="application/pdf")
             except ConflictError:
                 raise ConflictError(f"cannot render a draft {name} — finalize it first, then download the PDF.")
-            if not (isinstance(data, (bytes, bytearray)) and data[:5] == b"%PDF-"):
+            data = _as_pdf_bytes(data)
+            if data is None:
                 raise ValidationError("the server did not return a PDF.")
             dest = Path(out) if out else Path(f"{name}-{doc_id[:8]}.pdf")
             dest.write_bytes(data)

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import base64
+import binascii
 import subprocess
 import sys
 from pathlib import Path
@@ -12,6 +14,26 @@ from ..errors import ConflictError, ValidationError
 from ._shared import ctx_obj
 
 app = typer.Typer(no_args_is_help=True)
+
+
+def _as_pdf_bytes(data: object) -> bytes | None:
+    """Return raw PDF bytes, or None if `data` isn't a PDF.
+
+    Normally the server (asked with `Accept: application/pdf`) returns raw bytes
+    starting with `%PDF-`. As a belt-and-braces fallback we also accept a
+    base64-encoded PDF (`JVBERi0…`), which is what Lexware hands back when the
+    request's Accept is `application/json` — so the download still works even if
+    the Accept override is ever lost.
+    """
+    if not isinstance(data, (bytes, bytearray)):
+        return None
+    if data[:5] == b"%PDF-":
+        return bytes(data)
+    try:
+        decoded = base64.b64decode(data, validate=True)
+    except (binascii.Error, ValueError):
+        return None
+    return decoded if decoded[:5] == b"%PDF-" else None
 
 
 @app.command("list")
@@ -69,13 +91,16 @@ def pdf(
     obj = ctx_obj(ctx)
     client = obj.client()
     try:
-        data = client.get(f"/invoices/{invoice_id}/file", raw=True, params={})
+        # `Accept: application/pdf` is required — with the client's default
+        # `Accept: application/json`, Lexware base64-encodes the PDF.
+        data = client.get(f"/invoices/{invoice_id}/file", raw=True, params={}, accept="application/pdf")
     except ConflictError:
         raise ConflictError(
             "cannot render a draft invoice — finalize it first "
             "(`lexware-office invoice finalize <id>`), then download the PDF."
         )
-    if not (isinstance(data, (bytes, bytearray)) and data[:5] == b"%PDF-"):
+    data = _as_pdf_bytes(data)
+    if data is None:
         raise ValidationError("the server did not return a PDF for this invoice.")
 
     dest = Path(out) if out else Path(f"{_number(client, invoice_id)}.pdf")

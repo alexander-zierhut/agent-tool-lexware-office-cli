@@ -129,9 +129,15 @@ class Client:
         json: Any = None,
         content: bytes | None = None,
         raw: bool = False,
+        accept: str | None = None,
     ) -> Any:
         url = self._url(path)
         clean = {k: v for k, v in (params or {}).items() if v is not None}
+        # Binary downloads MUST override the default `Accept: application/json`.
+        # Lexware honours Accept literally: ask for JSON and it base64-encodes the
+        # PDF into a JSON-friendly body (still labelled `application/pdf`), so the
+        # bytes come back as `JVBERi0x…` (base64 of `%PDF-1…`) instead of raw PDF.
+        req_headers = {"Accept": accept} if accept else None
 
         if self.dry_run and method.upper() in _WRITE_METHODS:
             raise DryRun({"method": method.upper(), "url": url, "params": clean or None, "body": json if json is not None else content})
@@ -141,7 +147,7 @@ class Client:
         for attempt in range(1, _MAX_ATTEMPTS + 1):
             self._limiter.acquire()  # <-- the automatic delay; commands never see it
             try:
-                resp = self._client.request(method, url, params=clean or None, json=json, content=content)
+                resp = self._client.request(method, url, params=clean or None, json=json, content=content, headers=req_headers)
             except httpx.ConnectError as exc:
                 last_exc = exc
                 if attempt == _MAX_ATTEMPTS:

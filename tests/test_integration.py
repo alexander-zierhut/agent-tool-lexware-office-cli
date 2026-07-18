@@ -100,10 +100,17 @@ def test_pdf_only_for_finalized(client):
     cid = _company(client, "PDF GmbH")
     draft = _invoice(client, cid, days_ago=0, net=100, finalize=False)
     with pytest.raises(ConflictError):  # draft cannot render
-        client.get(f"/invoices/{draft['id']}/file", raw=True)
+        client.get(f"/invoices/{draft['id']}/file", raw=True, accept="application/pdf")
     final = _invoice(client, cid, days_ago=0, net=100, finalize=True)
-    pdf = client.get(f"/invoices/{final['id']}/file", raw=True)
+    # With Accept: application/pdf the server hands back RAW bytes.
+    pdf = client.get(f"/invoices/{final['id']}/file", raw=True, accept="application/pdf")
     assert isinstance(pdf, (bytes, bytearray)) and pdf[:5] == b"%PDF-"
+    # But with the client's DEFAULT Accept: application/json, Lexware (and now the
+    # mock) base64-encodes the PDF — the trap the `invoice pdf` command must dodge.
+    b64 = client.get(f"/invoices/{final['id']}/file", raw=True)
+    assert isinstance(b64, (bytes, bytearray)) and b64[:5] != b"%PDF-"
+    from lexwareoffice.commands.invoice import _as_pdf_bytes
+    assert _as_pdf_bytes(b64)[:5] == b"%PDF-"  # …and the helper recovers it
 
 
 def test_missing_resource_is_not_found(client):
