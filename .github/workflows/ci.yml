@@ -1,0 +1,65 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch: {}
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # Hermetic tier — no backend, no account, no network. Guards every PR.
+  unit:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.11", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: pip install -e '.[test]'
+      - run: python -m pytest -m "not integration" -q
+
+  # Integration tier — the CLI against the mock backend, booted here. No secrets:
+  # the mock IS the test instance (the "no local instance" problem, solved).
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Fetch + install the mock backend
+        run: |
+          git clone --depth 1 https://github.com/alexander-zierhut/agent-tool-lexware-office-mock ../lexware-office-mock \
+            || echo "mock repo not published yet — conftest will skip integration cleanly"
+          if [ -d ../lexware-office-mock ]; then (cd ../lexware-office-mock && npm install); fi
+      - run: pip install -e '.[test]'
+      - name: Integration tests (conftest boots the mock; skips if absent)
+        run: python -m pytest -m integration -q -rs
+
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e '.[build]' build
+      - run: python -m build && ls -l dist
+      - name: Install the wheel + smoke-test
+        run: |
+          python -m venv /tmp/clean
+          /tmp/clean/bin/pip install dist/*.whl
+          /tmp/clean/bin/lexware-cli --version
+      - name: The guide works with no config/token/network
+        run: env -i PATH=/usr/bin:/bin HOME=/nonexistent /tmp/clean/bin/lexware-cli guide > /dev/null
