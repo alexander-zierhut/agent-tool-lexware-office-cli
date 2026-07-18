@@ -38,6 +38,8 @@ build = ["pyinstaller>=6"]
 [project.urls]
 Homepage = "https://github.com/alexander-zierhut/agent-tool-lexware-office-cli"
 Repository = "https://github.com/alexander-zierhut/agent-tool-lexware-office-cli"
+Issues = "https://github.com/alexander-zierhut/agent-tool-lexware-office-cli/issues"
+Changelog = "https://github.com/alexander-zierhut/agent-tool-lexware-office-cli/releases"
 
 [project.scripts]
 lexware-office = "lexwareoffice.cli:main"
