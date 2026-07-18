@@ -1,0 +1,77 @@
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  # Publish to PyPI via Trusted Publishing (OIDC) — no API token stored.
+  pypi:
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      id-token: write   # OIDC for Trusted Publishing
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install build
+      - run: python -m build
+
+      # Read the version from the BUILT WHEEL, not by importing the package (this
+      # job installs only `build`, so an import would die on httpx/rich). This also
+      # catches the exact bug that failed a sibling's release: a version bump that
+      # touched only __init__.py while pyproject stayed static -> a stale-versioned
+      # wheel PyPI rejects as "File already exists", AFTER the tag was cut.
+      - name: Tag must match the built version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          WHL=$(ls dist/*.whl)
+          BUILT=$(basename "$WHL" | cut -d- -f2)
+          TAG="${GITHUB_REF_NAME#v}"
+          echo "built=$BUILT tag=$TAG ($(basename "$WHL"))"
+          [ "$BUILT" = "$TAG" ] || { echo "::error::tag v$TAG != built version $BUILT"; exit 1; }
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip-existing: true
+
+      - name: Attach dists to the GitHub release
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+
+  # Single-file binaries per platform, attached independently.
+  binary:
+    if: startsWith(github.ref, 'refs/tags/v')
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-latest,  asset: lexware-office-linux-x86_64 }
+          - { os: macos-latest,   asset: lexware-office-macos-arm64 }
+          - { os: macos-13,       asset: lexware-office-macos-x86_64 }
+          - { os: windows-latest, asset: lexware-office-windows-x86_64.exe }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install -e ".[build]"
+      - name: Build the single-file binary
+        run: pyinstaller --onefile --name "${{ matrix.asset }}" -c src/lexwareoffice/__main__.py
+      - name: Smoke-test it
+        shell: bash
+        run: ./dist/"${{ matrix.asset }}" --version
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: dist/${{ matrix.asset }}
