@@ -60,6 +60,6 @@ jobs:
         run: |
           python -m venv /tmp/clean
           /tmp/clean/bin/pip install dist/*.whl
-          /tmp/clean/bin/lexware-cli --version
+          /tmp/clean/bin/lexware-office --version
       - name: The guide works with no config/token/network
-        run: env -i PATH=/usr/bin:/bin HOME=/nonexistent /tmp/clean/bin/lexware-cli guide > /dev/null
+        run: env -i PATH=/usr/bin:/bin HOME=/nonexistent /tmp/clean/bin/lexware-office guide > /dev/null
