@@ -85,12 +85,15 @@ INVOICES
   lexware-office invoice list --status open|overdue|paid|draft|voided
   lexware-office invoice get <id>
   lexware-office invoice create --contact <id> --item "Beratung" --net 800 [--finalize]
+  lexware-office invoice create --from <draft-id> --finalize      # issue an existing draft
   lexware-office invoice pdf <id> --out inv.pdf [--open]
 
   `list` goes through the voucherlist hub (the only list view; a status is
   required, defaults to open). `create` makes a DRAFT unless `--finalize` (which
   assigns a number and issues it — one-way). `pdf` needs a FINALIZED invoice; a
   draft returns a conflict. `--open` previews in your system viewer (no-ops headless).
+  You cannot finalize an existing draft in place — recreate it with
+  `create --from <id> --finalize` (a new number); the source draft is not deleted.
 """,
     "documents": """\
 SALES DOCUMENTS (beyond invoices)
@@ -100,6 +103,7 @@ SALES DOCUMENTS (beyond invoices)
 
     lexware-office quotation list --status open
     lexware-office quotation create --contact <id> --item "Angebot" --net 5000
+    lexware-office quotation create --from <draft-id> --finalize   # issue an existing draft
     lexware-office credit-note create --contact <id> --item "Gutschrift" --net 100 --preceding <invoiceId>
     lexware-office delivery-note create --contact <id> --item "Ware"      # no prices
     lexware-office order-confirmation list --status open
@@ -110,6 +114,14 @@ SALES DOCUMENTS (beyond invoices)
   read-only; delivery-notes carry no money. All follow the draft/finalize rule.
   Bookkeeping (income/expense) entries live under `lexware-office voucher`, and the
   product catalogue under `lexware-office article`.
+
+  FINALIZING AN EXISTING DRAFT (e.g. one created in the Lexware Office web UI):
+  there is NO in-place finalize — the API has no PUT/finalize-existing and no
+  DELETE. Recreate it issued with `create --from <draft-id> --finalize`, which reads
+  the FULL draft (every line item, intro, remark, title, dates) and POSTs a new,
+  numbered document. Omit --finalize to clone it as a fresh draft. The original
+  draft is NOT touched — the API cannot delete it; remove it in the UI if unwanted.
+  Works for invoice, quotation, credit-note, order-confirmation, delivery-note.
 """,
     "webhooks": """\
 WEBHOOKS — "tell me when things change"
@@ -179,6 +191,9 @@ GOTCHAS — all verified against the real API
     but does NOT change the status — an invoice can be overdue AND partly paid.
   - Draft vs finalized: creates are drafts; `--finalize` issues them (one-way, gets
     a number). A draft cannot be rendered to PDF (409 — finalize first).
+  - You CANNOT finalize a pre-existing draft in place (no PUT, no DELETE). Recreate
+    it with `create --from <draft-id> --finalize` — a NEW numbered document; the
+    original draft stays until you delete it in the UI.
   - POST/PUT return an action-result {id, resourceUri, ..., version}, NOT the
     object. `get` it to see the assigned number.
   - Optimistic locking: an update needs the current `version`; a stale one is a

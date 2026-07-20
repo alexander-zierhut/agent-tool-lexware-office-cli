@@ -161,13 +161,20 @@ version; a stale version is a conflict (exit 6).
 
 Create the document (draft by default; --finalize issues it).
 
+With --from <id>, GET that document, strip its read-only/computed fields
+and recreate it in full (all line items, intro/remark/title, dates). This
+is how you finalize a pre-existing (e.g. UI-created) draft: the API has no
+in-place finalize, so --finalize here issues a NEW, numbered document. The
+source draft is left untouched — the API cannot delete it.
+
 | Option | Description |
 | --- | --- |
-| `--contact` | Contact id. **(required)** |
-| `--item` | Line item name. **(required)** |
+| `--contact` | Contact id. |
+| `--item` | Line item name. |
 | `--net` | Net unit price (EUR). Omit for delivery notes. |
 | `--tax` | Tax rate percent. |
 | `--qty` |  |
+| `--from` | Copy an existing draft (or any doc) in FULL and recreate it; with --finalize it is issued with a NEW number. Mutually exclusive with --contact/--item. |
 | `--preceding` | Preceding sales-voucher id (pursue / required for dunnings). |
 | `--finalize` | Finalize immediately (assigns a number; one-way). |
 
@@ -203,13 +210,20 @@ Download the document's PDF (must be finalized).
 
 Create the document (draft by default; --finalize issues it).
 
+With --from <id>, GET that document, strip its read-only/computed fields
+and recreate it in full (all line items, intro/remark/title, dates). This
+is how you finalize a pre-existing (e.g. UI-created) draft: the API has no
+in-place finalize, so --finalize here issues a NEW, numbered document. The
+source draft is left untouched — the API cannot delete it.
+
 | Option | Description |
 | --- | --- |
-| `--contact` | Contact id. **(required)** |
-| `--item` | Line item name. **(required)** |
+| `--contact` | Contact id. |
+| `--item` | Line item name. |
 | `--net` | Net unit price (EUR). Omit for delivery notes. |
 | `--tax` | Tax rate percent. |
 | `--qty` |  |
+| `--from` | Copy an existing draft (or any doc) in FULL and recreate it; with --finalize it is issued with a NEW number. Mutually exclusive with --contact/--item. |
 | `--preceding` | Preceding sales-voucher id (pursue / required for dunnings). |
 | `--finalize` | Finalize immediately (assigns a number; one-way). |
 
@@ -255,13 +269,20 @@ List via the voucherlist hub (the only list view; a status is required).
 
 Create the document (draft by default; --finalize issues it).
 
+With --from <id>, GET that document, strip its read-only/computed fields
+and recreate it in full (all line items, intro/remark/title, dates). This
+is how you finalize a pre-existing (e.g. UI-created) draft: the API has no
+in-place finalize, so --finalize here issues a NEW, numbered document. The
+source draft is left untouched — the API cannot delete it.
+
 | Option | Description |
 | --- | --- |
-| `--contact` | Contact id. **(required)** |
-| `--item` | Line item name. **(required)** |
+| `--contact` | Contact id. |
+| `--item` | Line item name. |
 | `--net` | Net unit price (EUR). Omit for delivery notes. |
 | `--tax` | Tax rate percent. |
 | `--qty` |  |
+| `--from` | Copy an existing draft (or any doc) in FULL and recreate it; with --finalize it is issued with a NEW number. Mutually exclusive with --contact/--item. |
 | `--preceding` | Preceding sales-voucher id (pursue / required for dunnings). |
 | `--finalize` | Finalize immediately (assigns a number; one-way). |
 
@@ -331,21 +352,31 @@ Register `lexware-office` with Claude Code as a Skill. Reversible with --uninsta
 
 Create an invoice (draft by default; `--finalize` issues it).
 
+With --from <id>, GET that invoice, strip its read-only/computed fields and
+recreate it in full. This is how you finalize a pre-existing (e.g. UI-created)
+draft: the API has no in-place finalize, so --finalize here issues a NEW,
+numbered invoice. The source draft is left untouched (the API cannot delete it).
+
 | Option | Description |
 | --- | --- |
-| `--contact` | Customer contact id. **(required)** |
-| `--item` | Line item name. **(required)** |
-| `--net` | Net unit price (EUR). **(required)** |
+| `--contact` | Customer contact id. |
+| `--item` | Line item name. |
+| `--net` | Net unit price (EUR). |
 | `--tax` | Tax rate percent. |
 | `--qty` |  |
 | `--term-days` | Payment term (days) -> due date. |
+| `--from` | Copy an existing draft (or any invoice) in FULL and recreate it; with --finalize it is issued with a NEW number. Mutually exclusive with --contact/--item. |
 | `--finalize` | Finalize immediately (assigns a number, one-way). |
 
 ### `lexware-office invoice finalize`
 
-Finalize a draft invoice (assigns a number, makes it legally issued).
+Finalize an existing draft — NOT supported in place by the API.
 
-One-way and legally significant — there is no un-finalize.
+The public API has no PUT/finalize-existing and no DELETE on invoices: the only
+way to issue a document is at CREATE time with `?finalize=true`. To finalize a
+pre-existing (e.g. UI-created) draft, recreate it issued with
+`invoice create --from <id> --finalize`, which reads the full draft and posts a
+new, numbered invoice. The original draft cannot be removed via the API.
 
 **Arguments:** `invoice_id` (required)
 
@@ -396,13 +427,20 @@ path, never dumped to stdout.
 
 Create the document (draft by default; --finalize issues it).
 
+With --from <id>, GET that document, strip its read-only/computed fields
+and recreate it in full (all line items, intro/remark/title, dates). This
+is how you finalize a pre-existing (e.g. UI-created) draft: the API has no
+in-place finalize, so --finalize here issues a NEW, numbered document. The
+source draft is left untouched — the API cannot delete it.
+
 | Option | Description |
 | --- | --- |
-| `--contact` | Contact id. **(required)** |
-| `--item` | Line item name. **(required)** |
+| `--contact` | Contact id. |
+| `--item` | Line item name. |
 | `--net` | Net unit price (EUR). Omit for delivery notes. |
 | `--tax` | Tax rate percent. |
 | `--qty` |  |
+| `--from` | Copy an existing draft (or any doc) in FULL and recreate it; with --finalize it is issued with a NEW number. Mutually exclusive with --contact/--item. |
 | `--preceding` | Preceding sales-voucher id (pursue / required for dunnings). |
 | `--finalize` | Finalize immediately (assigns a number; one-way). |
 
@@ -450,13 +488,20 @@ The connected organisation (`GET /v1/profile`): company, features, tax type.
 
 Create the document (draft by default; --finalize issues it).
 
+With --from <id>, GET that document, strip its read-only/computed fields
+and recreate it in full (all line items, intro/remark/title, dates). This
+is how you finalize a pre-existing (e.g. UI-created) draft: the API has no
+in-place finalize, so --finalize here issues a NEW, numbered document. The
+source draft is left untouched — the API cannot delete it.
+
 | Option | Description |
 | --- | --- |
-| `--contact` | Contact id. **(required)** |
-| `--item` | Line item name. **(required)** |
+| `--contact` | Contact id. |
+| `--item` | Line item name. |
 | `--net` | Net unit price (EUR). Omit for delivery notes. |
 | `--tax` | Tax rate percent. |
 | `--qty` |  |
+| `--from` | Copy an existing draft (or any doc) in FULL and recreate it; with --finalize it is issued with a NEW number. Mutually exclusive with --contact/--item. |
 | `--preceding` | Preceding sales-voucher id (pursue / required for dunnings). |
 | `--finalize` | Finalize immediately (assigns a number; one-way). |
 

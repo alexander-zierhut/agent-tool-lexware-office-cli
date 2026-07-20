@@ -57,6 +57,8 @@ per-customer rollup (`--view customers`), and who to chase (`--view dunning`).
 - `lexware-office receivables [--view aging|customers|dunning]` — the killer feature.
 - `lexware-office invoice list|get|create|finalize|payments|pdf` — `list` needs a
   --status (default open); `pdf` needs a FINALIZED invoice; `create` drafts unless --finalize.
+  To issue a pre-existing (e.g. UI-created) draft use `create --from <id> --finalize`
+  (recreates it as a NEW numbered document — there is NO in-place finalize).
 - `lexware-office contact list|get|create|update` — customers & vendors.
 - Other sales documents, same shape: `lexware-office quotation|credit-note|order-confirmation|delivery-note|down-payment-invoice|dunning list|get|create` (dunnings need --preceding; down-payment-invoices are read-only).
 - `lexware-office article list|get|create|delete` — products/services catalogue.
@@ -101,6 +103,9 @@ Preview ANY write with a global `--dry-run`. Finalizing an invoice is ONE-WAY
   Aging is computed from the due date, not read from a status.
 - Sum openAmount, not the total — a partial payment leaves an invoice overdue.
 - A draft invoice cannot be turned into a PDF (finalize it first).
+- A pre-existing draft cannot be finalized in place (no PUT/DELETE on sales docs).
+  `create --from <draft-id> --finalize` recreates it as a NEW numbered document; the
+  original draft is NOT deleted by the API (remove it in the UI).
 - Create returns an action-result {{id, ...}}, not the object — `get` it to see
   the assigned customer/vendor number.
 - The API has NO payroll and NO bank-account management. Don't look for them.

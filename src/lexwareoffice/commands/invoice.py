@@ -11,7 +11,7 @@ from pathlib import Path
 import typer
 
 from ..errors import ConflictError, ValidationError
-from ._shared import ctx_obj
+from ._shared import ctx_obj, recreate_body_from
 
 app = typer.Typer(no_args_is_help=True)
 
@@ -96,8 +96,9 @@ def pdf(
         data = client.get(f"/invoices/{invoice_id}/file", raw=True, params={}, accept="application/pdf")
     except ConflictError:
         raise ConflictError(
-            "cannot render a draft invoice — finalize it first "
-            "(`lexware-office invoice finalize <id>`), then download the PDF."
+            "cannot render a draft invoice: a draft has no PDF. The API cannot finalize an "
+            "existing draft in place — issue it with `lexware-office invoice create --from <id> "
+            "--finalize` (this creates a new, numbered invoice), then download that document's PDF."
         )
     data = _as_pdf_bytes(data)
     if data is None:
@@ -113,36 +114,70 @@ def pdf(
 
 @app.command("finalize")
 def finalize(ctx: typer.Context, invoice_id: str = typer.Argument(..., help="Draft invoice id.")) -> None:
-    """Finalize a draft invoice (assigns a number, makes it legally issued).
+    """Finalize an existing draft — NOT supported in place by the API.
 
-    One-way and legally significant — there is no un-finalize.
+    The public API has no PUT/finalize-existing and no DELETE on invoices: the only
+    way to issue a document is at CREATE time with `?finalize=true`. To finalize a
+    pre-existing (e.g. UI-created) draft, recreate it issued with
+    `invoice create --from <id> --finalize`, which reads the full draft and posts a
+    new, numbered invoice. The original draft cannot be removed via the API.
     """
-    obj = ctx_obj(ctx)
-    # A finalize is a re-POST with ?finalize=true is not how the API works; the
-    # real flow finalizes at create time. For an existing draft, the documented
-    # path is unavailable via public API in some versions — surface clearly.
+    obj = ctx_obj(ctx)  # noqa: F841 — keep the DI/first-run wiring consistent
     raise ValidationError(
-        "the public API finalizes at CREATE time (`invoice create ... --finalize`), "
-        "not as a separate step on an existing draft. Re-create with --finalize, or "
-        "finalize the draft in the Lexware Office UI."
+        "the public API cannot finalize an existing draft in place (no PUT, no DELETE). "
+        "Recreate it issued with `lexware-office invoice create --from "
+        f"{invoice_id} --finalize` (this creates a new, numbered invoice); the original "
+        "draft remains and must be removed in the Lexware Office UI."
     )
 
 
 @app.command("create")
 def create(
     ctx: typer.Context,
-    contact_id: str = typer.Option(..., "--contact", help="Customer contact id."),
-    name: str = typer.Option(..., "--item", help="Line item name."),
-    net: float = typer.Option(..., "--net", help="Net unit price (EUR)."),
+    contact_id: str = typer.Option(None, "--contact", help="Customer contact id."),
+    name: str = typer.Option(None, "--item", help="Line item name."),
+    net: float = typer.Option(None, "--net", help="Net unit price (EUR)."),
     tax: float = typer.Option(19, "--tax", help="Tax rate percent."),
     quantity: float = typer.Option(1, "--qty"),
     term_days: int = typer.Option(14, "--term-days", help="Payment term (days) -> due date."),
+    from_id: str = typer.Option(None, "--from", help="Copy an existing draft (or any invoice) in FULL and recreate it; with --finalize it is issued with a NEW number. Mutually exclusive with --contact/--item."),
     finalize: bool = typer.Option(False, "--finalize", help="Finalize immediately (assigns a number, one-way)."),
 ) -> None:
-    """Create an invoice (draft by default; `--finalize` issues it)."""
+    """Create an invoice (draft by default; `--finalize` issues it).
+
+    With --from <id>, GET that invoice, strip its read-only/computed fields and
+    recreate it in full. This is how you finalize a pre-existing (e.g. UI-created)
+    draft: the API has no in-place finalize, so --finalize here issues a NEW,
+    numbered invoice. The source draft is left untouched (the API cannot delete it).
+    """
     from datetime import date
 
     obj = ctx_obj(ctx)
+    if from_id and (contact_id or name or net is not None):
+        raise ValidationError("use --from OR --contact/--item, not both.")
+    if not from_id and not (contact_id and name and net is not None):
+        raise ValidationError("need --from <draft-id>, or --contact, --item and --net, to create an invoice.")
+
+    if from_id:
+        client = obj.client()
+        src = client.get(f"/invoices/{from_id}")
+        body, preceding = recreate_body_from(src, money=True)
+        params = {}
+        if preceding:
+            params["precedingSalesVoucherId"] = preceding
+        if finalize:
+            params["finalize"] = "true"
+        res = client.post("/invoices", json=body, params=params or None)
+        out = dict(res) if isinstance(res, dict) else {"result": res}
+        out["from"] = from_id
+        out["finalized"] = bool(finalize)
+        out["note"] = (
+            f"original draft {from_id} still exists; the API cannot delete it — "
+            "remove it in the Lexware Office UI if unwanted."
+        )
+        obj.emitter.emit(out)
+        return
+
     today = date.today().isoformat() + "T00:00:00.000+02:00"
     body = {
         "voucherDate": today,

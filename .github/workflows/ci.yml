@@ -40,7 +40,7 @@ jobs:
           python-version: "3.12"
       - name: Fetch + install the mock backend
         run: |
-          git clone --depth 1 https://github.com/alexander-zierhut/agent-tool-lexware-office-mock ../lexware-office-mock \
+          git clone --depth 1 https://github.com/alexander-zierhut/lexware-office-api-mock ../lexware-office-mock \
             || echo "mock repo not published yet — conftest will skip integration cleanly"
           if [ -d ../lexware-office-mock ]; then (cd ../lexware-office-mock && npm install); fi
       - run: pip install -e '.[test]'

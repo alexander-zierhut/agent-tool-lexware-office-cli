@@ -62,24 +62,59 @@ def make_group(name: str) -> typer.Typer:
         @app.command("create")
         def create(
             ctx: typer.Context,
-            contact_id: str = typer.Option(..., "--contact", help="Contact id."),
-            item: str = typer.Option(..., "--item", help="Line item name."),
-            net: float = typer.Option(0.0, "--net", help="Net unit price (EUR). Omit for delivery notes."),
+            contact_id: str = typer.Option(None, "--contact", help="Contact id."),
+            item: str = typer.Option(None, "--item", help="Line item name."),
+            net: float = typer.Option(None, "--net", help="Net unit price (EUR). Omit for delivery notes."),
             tax: float = typer.Option(19, "--tax", help="Tax rate percent."),
             qty: float = typer.Option(1, "--qty"),
+            from_id: str = typer.Option(None, "--from", help="Copy an existing draft (or any doc) in FULL and recreate it; with --finalize it is issued with a NEW number. Mutually exclusive with --contact/--item."),
             preceding: str = typer.Option(None, "--preceding", help="Preceding sales-voucher id (pursue / required for dunnings)."),
             finalize: bool = typer.Option(False, "--finalize", help="Finalize immediately (assigns a number; one-way)."),
         ) -> None:
-            """Create the document (draft by default; --finalize issues it)."""
-            from ._shared import ctx_obj
+            """Create the document (draft by default; --finalize issues it).
+
+            With --from <id>, GET that document, strip its read-only/computed fields
+            and recreate it in full (all line items, intro/remark/title, dates). This
+            is how you finalize a pre-existing (e.g. UI-created) draft: the API has no
+            in-place finalize, so --finalize here issues a NEW, numbered document. The
+            source draft is left untouched — the API cannot delete it.
+            """
+            from ._shared import ctx_obj, recreate_body_from
 
             obj = ctx_obj(ctx)
+            if from_id and (contact_id or item or net is not None):
+                raise ValidationError("use --from OR --contact/--item, not both.")
+            if not from_id and not (contact_id and item):
+                raise ValidationError(f"need --from <draft-id>, or --contact and --item, to create a {name}.")
+
+            if from_id:
+                client = obj.client()
+                src = client.get(f"/{collection}/{from_id}")
+                body, src_preceding = recreate_body_from(src, money=cfg["money"])
+                preceding = preceding or src_preceding
+                do_finalize = bool(finalize and not cfg.get("no_finalize"))
+                params: dict = {}
+                if preceding:
+                    params["precedingSalesVoucherId"] = preceding
+                if do_finalize:
+                    params["finalize"] = "true"
+                res = client.post(f"/{collection}", json=body, params=params or None)
+                out = dict(res) if isinstance(res, dict) else {"result": res}
+                out["from"] = from_id
+                out["finalized"] = do_finalize
+                out["note"] = (
+                    f"original draft {from_id} still exists; the API cannot delete it — "
+                    "remove it in the Lexware Office UI if unwanted."
+                )
+                obj.emitter.emit(out)
+                return
+
             if cfg.get("requires_preceding") and not preceding:
                 raise ValidationError(f"a --preceding <invoice-id> is required for a {name}.")
             today = _today_iso()
             line: dict = {"type": "custom", "name": item, "quantity": qty, "unitName": "Stück"}
             if cfg["money"]:
-                line["unitPrice"] = {"currency": "EUR", "netAmount": net, "taxRatePercentage": tax}
+                line["unitPrice"] = {"currency": "EUR", "netAmount": net or 0.0, "taxRatePercentage": tax}
             body: dict = {
                 "voucherDate": today,
                 "address": {"contactId": contact_id},
@@ -125,7 +160,11 @@ def make_group(name: str) -> typer.Typer:
                 # Accept: application/pdf — else Lexware base64-encodes the body.
                 data = obj.client().get(f"/{collection}/{doc_id}/file", raw=True, accept="application/pdf")
             except ConflictError:
-                raise ConflictError(f"cannot render a draft {name} — finalize it first, then download the PDF.")
+                raise ConflictError(
+                    f"cannot render a draft {name}: a draft has no PDF. The API cannot finalize an "
+                    f"existing draft in place — issue it with `lexware-office {name} create --from <id> "
+                    f"--finalize` (this creates a new, numbered {name}), then download that document's PDF."
+                )
             data = _as_pdf_bytes(data)
             if data is None:
                 raise ValidationError("the server did not return a PDF.")
