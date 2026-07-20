@@ -72,6 +72,7 @@ group. The top level:
 
 ╭─ Commands ───────────────────────────────────────────────────────────────────────╮
 │ guide                 Built-in operating guide — how to use this CLI.            │
+│ report                Report a bug / missing feature — repo + pre-filled issue l…│
 │ receivables           Outstanding receivables + AR aging — the number the API   │
 │                       won't total.                                              │
 │ contact               Customers & vendors: list, get, create, update.           │

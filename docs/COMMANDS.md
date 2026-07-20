@@ -25,6 +25,7 @@ _Every command also accepts `--output/-o` (json\|table\|markdown\|csv), `--forma
 - [`receivables`](#receivables) — Outstanding receivables + AR aging — the number the API won't total.
 - [`recurring`](#recurring) — Recurring invoice templates (read-only).
 - [`reference`](#reference) — Reference data: countries, categories, payment conditions.
+- [`report`](#report) — Report a bug or missing feature — prints this tool's repo and a pre-filled issue link (offline, no token).
 - [`settings`](#settings) — View & change CLI settings.
 - [`voucher`](#voucher) — Bookkeeping vouchers (accounting entries).
 - [`webhook`](#webhook) — Webhooks: subscribe to events, list, delete.
@@ -569,6 +570,12 @@ Booking categories for vouchers (income vs outgo).
 ### `lexware-office reference print-layouts`
 
 Document print layouts available to the organisation.
+
+## `report`
+
+### `lexware-office report`
+
+Report a bug or missing feature — prints this tool's repo and a pre-filled issue link (offline, no token).
 
 ## `settings`
 

@@ -53,7 +53,7 @@ def _root(
 ) -> None:
     if profile:
         os.environ["LEXWAREOFFICE_PROFILE"] = profile
-    meta = ctx.invoked_subcommand in ("settings", "guide", "install", "context")
+    meta = ctx.invoked_subcommand in ("settings", "guide", "install", "context", "report")
     interactive = (
         not meta and sys.stdin.isatty() and sys.stdout.isatty() and os.environ.get("CI") != "true"
     )
@@ -112,6 +112,7 @@ from .commands import (  # noqa: E402
     receivables,
     recurring,
     reference,
+    report,
     settings,
     voucher,
     webhook,
@@ -119,6 +120,7 @@ from .commands import (  # noqa: E402
 from .commands._salesdoc import make_group  # noqa: E402
 
 app.command("guide", help="Built-in operating guide — how to use this CLI without external docs.")(guide.guide)
+app.command("report", help="Report a bug or missing feature — prints this tool's repo and a pre-filled issue link (offline, no token).")(report.report)
 
 # Top-level, because it's the thing you came for: "who owes me money?"
 app.command("receivables", help="Outstanding receivables + AR aging — the number the API won't total.")(receivables.receivables)
