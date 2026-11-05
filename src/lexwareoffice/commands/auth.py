@@ -7,7 +7,7 @@ import sys
 import typer
 
 from ..config import PROD_URL, SANDBOX_URL, Profile
-from ..errors import AuthError, ConfigError
+from ..errors import AuthError, ConfigError, OpError
 from ..spec import credentials, token_url
 from ._shared import ctx_obj
 
@@ -64,13 +64,22 @@ def login(
 
 @app.command("status")
 def status(ctx: typer.Context) -> None:
-    """Which key/backend is in use, and for which organisation."""
+    """Which key/backend is in use, and for which organisation. Never fails.
+
+    This is the command you run when something is wrong, so an unconfigured
+    tool must answer `{"configured": false}` with exit 0, not a config error.
+    """
     obj = ctx_obj(ctx)
     name = obj.config.active_profile_name()
-    prof = obj.config.resolve()
+    try:
+        prof = obj.config.resolve()
+    except OpError as exc:
+        obj.emitter.emit({"profile": name, "configured": False, "reason": exc.message})
+        return
     has = bool(credentials.get_token(name))
     obj.emitter.emit({
         "profile": name,
+        "configured": True,
         "baseUrl": prof.base_url,
         "companyName": prof.company_name,
         "organizationId": prof.organization_id,

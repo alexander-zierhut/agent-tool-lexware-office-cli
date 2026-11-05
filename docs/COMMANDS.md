@@ -94,7 +94,10 @@ Delete the stored key for a profile.
 
 ### `lexware-office auth status`
 
-Which key/backend is in use, and for which organisation.
+Which key/backend is in use, and for which organisation. Never fails.
+
+This is the command you run when something is wrong, so an unconfigured
+tool must answer `{"configured": false}` with exit 0, not a config error.
 
 ## `contact`
 
