@@ -17,13 +17,18 @@ from lexwareoffice.receivables import enrich, summarise
 pytestmark = pytest.mark.integration
 
 
+# The mock judges "overdue" against the real clock, so invoice dates must be
+# relative to today. A fixed date rots: "current" invoices turn overdue later.
+TODAY = date.today()
+
+
 def _company(client, name):
     r = client.post("/contacts", json={"version": 0, "roles": {"customer": {}}, "company": {"name": name}})
     return r["id"]
 
 
 def _invoice(client, contact_id, days_ago, net, finalize=True):
-    d = (date(2026, 7, 18) - timedelta(days=days_ago)).isoformat() + "T00:00:00.000+02:00"
+    d = (TODAY - timedelta(days=days_ago)).isoformat() + "T00:00:00.000+02:00"
     body = {
         "voucherDate": d,
         "address": {"contactId": contact_id},
@@ -88,7 +93,7 @@ def test_receivables_end_to_end_partial_payment(client):
     inv = _invoice(client, cid, days_ago=50, net=1000)  # gross 1190, ~36d overdue
     client.post(f"/__mock__/vouchers/{inv['id']}/pay", json={"amount": 190})  # partial
     rows_raw = {v["id"]: v for v in client.paginate("/voucherlist", params={"voucherType": "invoice", "voucherStatus": "open"})}
-    rows = enrich(rows_raw.values(), today=date(2026, 7, 18))
+    rows = enrich(rows_raw.values(), today=TODAY)
     mine = next(r for r in rows if r.contactName == "AR GmbH")
     assert mine.openAmount == 1000.0        # 1190 - 190 partial
     assert mine.daysOverdue > 0             # still overdue despite the payment
